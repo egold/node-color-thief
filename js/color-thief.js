@@ -178,6 +178,84 @@ function getAverageRGB(sourceImage) {
     return rgb;
 }
 
+/*
+ * getDominantEdgeColor(sourceImage, edgeWidth)
+ * returns {r: num, g: num, b: num}
+ *
+ * Uses pixels around outside edge of image to get average edge color. Quick way to
+ * reasonably guess the background color of some types of images
+ *
+ * Future Improvement: return % of edge pixels that match +/- 5% of color, to know if any 
+ * single color dominates
+ */
+function getDominantEdgeColor(sourceImage, edgeWidth) {
+    var image = new CanvasImage(sourceImage),
+        pixels = image.getImageData().data,
+        pixelCount = image.getPixelCount();
+
+    var i = 0,
+        count = 0,
+        rgb = {r:0, g:0, b:0};
+
+    // Loop over pixels, discarding all but the edge ones
+    for (var y = 0; y < image.height; y++) {
+        i++;
+        for (var x = 0; x < image.width; x++) {
+            i++;
+            //if position y == top edge     -> Y < edgeWidth
+            //if position y == bottom edge  -> Y > image.height - edgeWidth
+            //if position x == left edge    -> X < edgeWidth
+            //if position x == right edge   -> X > image.width - edgeWidth
+
+            if (y < edgeWidth || y > image.height - edgeWidth || x < edgeWidth || x > image.width - edgeWidth) {
+                //pixel mostly opaque?
+                if (pixels[i+3] > 125) {
+                    ++count;
+                    rgb.r += pixels[i];
+                    rgb.g += pixels[i+1];
+                    rgb.b += pixels[i+2];
+                }
+            }
+        }
+    }
+
+    rgb.r = ~~(rgb.r/count);
+    rgb.g = ~~(rgb.g/count);
+    rgb.b = ~~(rgb.b/count);
+
+    return rgb;
+}
+
+function getCornerColors(sourceImage) {
+    var image = new CanvasImage(sourceImage),
+        pixels = image.getImageData().data,
+        pixelCount = image.getPixelCount();
+
+    var corners = [];
+
+    //corners of image in pixel coordinates
+    var samplingPositions = [0, 
+                             image.width - 1, 
+                             image.height * image.width - image.width - 1,
+                             image.height * image.width - 1];
+
+    console.log("Extracting corner colors for image with dimensions = " + image.width + "x" + image.height);
+    console.log("Total pixels: " + pixelCount);
+    console.log("Pixel data length: " + pixels.length);
+    for (var j = 0; j < samplingPositions.length; j++) {
+        var pixelOffset = samplingPositions[j] * 4;
+        console.log("Processing pixel at index " + pixelOffset);
+        if (pixels[pixelOffset+3] < 125)
+            continue;
+        corners.push({
+            r: pixels[pixelOffset],
+            g: pixels[pixelOffset+1],
+            b: pixels[pixelOffset+2],
+        });
+    };
+
+    return corners;
+}
 
 /*
  * createAreaBasedPalette(sourceImage, colorCount)
@@ -240,3 +318,5 @@ function createAreaBasedPalette(sourceImage, colorCount) {
 
 module.exports.getDominantColor = getDominantColor
 module.exports.createPalette = createPalette
+module.exports.getDominantEdgeColor = getDominantEdgeColor
+module.exports.getCornerColors = getCornerColors
