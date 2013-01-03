@@ -85,7 +85,7 @@ function getDominantColor(sourceImage) {
  *
  * BUGGY: Function does not always return the requested amount of colors. It can be +/- 2.
  */
-function createPalette(sourceImage, colorCount) {
+function createPalette(sourceImage, colorCount, filtered_colors) {
 
     // Create custom CanvasImage object
     var image = new CanvasImage(sourceImage),
@@ -103,7 +103,19 @@ function createPalette(sourceImage, colorCount) {
         a = pixels[offset + 3];
         // If pixel is mostly opaque and not white
         if (a >= 125) {
-            if (!(r > 250 && g > 250 && b > 250)) {
+            if (filtered_colors) {
+                var filter_pixel = false
+                for (var j = 0; j < filtered_colors.length; j++) {
+                    var filtered_color = filtered_colors[j]
+                    if (r == filtered_color.r && g == filtered_color.g && b == filtered_color.b)
+                    {
+                        filter_pixel = true
+                    }
+                };
+                if (!filter_pixel)
+                    pixelArray.push([r, g, b]);
+            }
+            else {
                 pixelArray.push([r, g, b]);
             }
         }
